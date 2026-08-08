@@ -1,5 +1,11 @@
 # AI 交接记录
 
+## 2026-08-08 — Guest content authorization for 1.1.3 build 20
+
+- 隐私页现明确：Guest 在新留言保存或发送前确认有权分享录音与照片，并授权 Host 在该 Event 内保存、播放、展示、导出以及向附近 Voice Booth 用户分享；App 随留言保存授权版本、接受时间与完整文案。
+- 旧留言仍可由 Host 本地播放/导出，但没有当前授权证据时不进入 Nearby Live View 或 ended Event copy；恢复的未发送草稿必须重新确认授权。
+- 支持页同步新的 Guest 操作要求。公开联系邮箱继续为 `dylan120liu@gmail.com`，三页版权继续为 `© 2026 Dylan Liu`。
+
 ## 2026-08-08 — 1.1.3 Nearby Event Share
 
 - 官网、隐私页和支持页同步 1.1.3：Host Lifetime 可创建 Live Event 只读查看邀请，或把 ended Event 作为独立本地副本传给附近已安装 App 的用户；接收免费，不使用开发者服务器。
