@@ -1,5 +1,11 @@
 # AI 交接记录
 
+## 2026-08-08 — 1.1.3 Nearby Event Share
+
+- 官网、隐私页和支持页同步 1.1.3：Host Lifetime 可创建 Live Event 只读查看邀请，或把 ended Event 作为独立本地副本传给附近已安装 App 的用户；接收免费，不使用开发者服务器。
+- 隐私政策生效日期更新为 2026-08-08，明确两种 Event Share 均通过加密 Multipeer Connectivity 在附近设备间传输；不新增账号、分析、广告、跟踪或云端媒体存储。
+- 待通过独立 Site 仓库 GitHub Flow 合并并重新验证 Pages 三个 canonical URL 后，才能把新文案视为已公开发布。
+
 ## 2026-08-06 — 1.1.2 产品事实同步
 
 - 在独立分支 `feature/refresh-1.1.2-site` 同步 App 1.1.2：每条语音最多包含 6 张可选照片；首页补充 wedding audio guestbook 定位与全屏 Memory Show，隐私页和支持页同步更新数量及权限说明。
