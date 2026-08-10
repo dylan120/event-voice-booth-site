@@ -1,5 +1,12 @@
 # AI 交接记录
 
+## 2026-08-10 — 1.1.4 Memory Movie 与官网 SEO
+
+- 分支 `feature/refresh-1.1.4-memory-movie` 同步 App 1.1.4 已实现的本地 Memory Movie：固定 16:9、1080p，按留言从旧到新，使用各留言自己的照片，无照片时使用 Event 主题；不声称自动配乐、AI 剪辑或视频投稿。
+- 首页 title/description 收敛为 wedding audio guestbook + Memory Movie；隐私页说明本机生成、系统分享和临时文件清理；支持页补充入口、前台/存储排障与源留言不变。
+- 未新增脚本、第三方依赖、追踪或视觉 token；继续使用既有三页布局与响应式规则。公开联系邮箱保持 `dylan120liu@gmail.com`，版权保持 `© 2026 Dylan Liu`。
+- 发布前必须运行本地链接/事实/敏感信息检查，经独立 PR 合并到 `main`，等待 Pages 部署后匿名复核 `/`、`/privacy/`、`/support/` 三页 HTTPS 200，再把 commit、PR、workflow 与公开 URL 写回 App 和 Site 交接记录。
+
 ## 2026-08-08 — Guest content authorization for 1.1.3 build 20
 
 - 隐私页现明确：Guest 在新留言保存或发送前确认有权分享录音与照片，并授权 Host 在该 Event 内保存、播放、展示、导出以及向附近 Voice Booth 用户分享；App 随留言保存授权版本、接受时间与完整文案。
