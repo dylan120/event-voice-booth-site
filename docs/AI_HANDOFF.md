@@ -6,6 +6,7 @@
 - 首页 title/description 收敛为 wedding audio guestbook + Memory Movie；隐私页说明本机生成、系统分享和临时文件清理；支持页补充入口、前台/存储排障与源留言不变。
 - 未新增脚本、第三方依赖、追踪或视觉 token；继续使用既有三页布局与响应式规则。公开联系邮箱保持 `dylan120liu@gmail.com`，版权保持 `© 2026 Dylan Liu`。
 - 发布前必须运行本地链接/事实/敏感信息检查，经独立 PR 合并到 `main`，等待 Pages 部署后匿名复核 `/`、`/privacy/`、`/support/` 三页 HTTPS 200，再把 commit、PR、workflow 与公开 URL 写回 App 和 Site 交接记录。
+- 已完成：提交 `80a132c5a884d3252fa2271f68347c4af9d7fe61` 经 [PR #5](https://github.com/dylan120/event-voice-booth-site/pull/5) 合并，merge SHA `1c76533b9725fe6bc75e07d7a604c92906da5e59`；Pages run `31369684601` 成功。2026-08-10 16:22 +0800 匿名复核首页、隐私页和支持页均 HTTPS 200，Memory Movie、联系邮箱及版权已持久化。Pages 为 legacy `main` `/` source；构建仅有 Node.js 20 迁移到 24 的平台弃用警告。
 
 ## 2026-08-08 — Guest content authorization for 1.1.3 build 20
 
