@@ -1,0 +1,23 @@
+{
+  "name": "event-voice-booth-web-guest",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "test": "vitest run",
+    "deploy": "wrangler deploy",
+    "pages:deploy": "wrangler pages deploy public --project-name event-voice-booth-guest"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "^0.8.0",
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.4",
+    "wrangler": "^4.121.0"
+  },
+  "dependencies": {
+    "@bradford-tech/supabase-integrity-attest": "^0.9.1",
+    "@mediapipe/tasks-vision": "^0.10.22-rc.20250304",
+    "@studium-ignotum/app-store-server-library": "^3.1.1"
+  }
+}

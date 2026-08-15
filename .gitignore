@@ -1,0 +1,5 @@
+# 依赖、Wrangler 本地缓存和性能诊断不进入生产站点源码或公开仓库。
+web-guest/node_modules/
+web-guest/.wrangler/
+web-guest/worker-startup.cpuprofile
+web-guest/src/worker-configuration.d.ts

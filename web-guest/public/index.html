@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+    <meta name="referrer" content="no-referrer">
+    <title>Event Voice Booth Guest</title>
+    <link rel="stylesheet" href="/app.css">
+  </head>
+  <body>
+    <main>
+      <p class="eyebrow">EVENT VOICE BOOTH</p>
+      <h1>Leave a voice message</h1>
+      <p id="status" class="status" role="status" aria-live="polite">Checking this private event link…</p>
+
+      <section id="consent-panel" hidden aria-labelledby="consent-title">
+        <h2 id="consent-title">Before you record</h2>
+        <p>Your voice message and optional photos are sent privately to this event’s host. They are temporarily held only so the host can save them. Do not include anyone else’s private information without permission.</p>
+        <label class="check"><input id="consent" type="checkbox"> I have permission to share this recording and any photos.</label>
+        <button id="begin" type="button" disabled>Continue</button>
+      </section>
+
+      <section id="composer" hidden aria-labelledby="record-title">
+        <h2 id="record-title">Record your message</h2>
+        <p id="limits" class="hint"></p>
+        <div class="actions">
+          <button id="record" type="button">Start recording</button>
+          <button id="stop" type="button" class="secondary" disabled>Stop</button>
+          <button id="discard" type="button" class="secondary" disabled>Record again</button>
+        </div>
+        <audio id="preview" controls hidden></audio>
+        <div class="photos"><strong>Optional selfies</strong><span>Take up to 6 front-camera selfies. Your selected effect runs only in this browser before the final JPEG is compressed and securely uploaded.</span><label class="effect-picker" for="selfie-effect">Selfie effect<select id="selfie-effect"><option value="natural">Natural</option><option value="bigHead">Big Head</option><option value="partyWig">Party Wig</option><option value="bunnyEars">Bunny Ears</option><option value="goofyGlasses">Goofy Glasses</option><option value="alienEyes">Alien Eyes</option><option value="paperBag">Paper Bag</option><option value="faceWarp">Face Warp</option><option value="bigEyes">Big Eyes</option><option value="fakeMustache">Fake Mustache</option><option value="sunglasses">Sunglasses</option></select></label><div class="photo-actions"><button id="take-photo" type="button" class="secondary" disabled>Take a selfie</button><button id="choose-photos" type="button" class="secondary" disabled>Choose photos</button></div><input id="camera-photos" type="file" accept="image/jpeg,image/png" capture="user" hidden><input id="library-photos" type="file" accept="image/jpeg,image/png" multiple hidden></div>
+        <ul id="photo-list" class="photo-list" aria-live="polite"></ul>
+        <p id="send-summary" class="hint" aria-live="polite"></p>
+        <button id="send" type="button" disabled>Send to host</button>
+      </section>
+
+      <section id="saved-panel" hidden aria-labelledby="saved-title">
+        <h2 id="saved-title">Sent securely</h2>
+        <p id="saved-status" class="status" role="status" aria-live="polite">Waiting for the host to save your message…</p>
+      </section>
+      <noscript>This private guest page needs JavaScript to record a message.</noscript>
+    </main>
+    <script type="module" src="/join.js"></script>
+  </body>
+</html>
