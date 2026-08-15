@@ -1,0 +1,42 @@
+name = "event-voice-booth-web-guest"
+main = "src/worker.ts"
+compatibility_date = "2026-08-11"
+workers_dev = true
+# 生产仅保留 canonical workers.dev URL；不生成可意外传播的预览 URL。
+preview_urls = false
+
+# Never add a public bucket URL. Bind the private bucket only after R2 is enabled.
+[[r2_buckets]]
+binding = "MEDIA"
+bucket_name = "event-voice-booth-guest-media"
+
+[[d1_databases]]
+binding = "DB"
+# 生产环境只绑定独立空库；旧已下架环境的 D1 审计库不复用，避免历史 Schema 漂移。
+database_name = "event-voice-booth-guest-prod"
+database_id = "97876567-34bd-4106-b221-61d4e57fb9e2"
+
+[vars]
+GUEST_ORIGIN = "https://event-voice-booth-guest.pages.dev"
+HOST_ORIGIN = "https://event-voice-booth-guest.pages.dev"
+# 免费层成本护栏：20 个同时 live 活动；每场最多 100 条、250 MiB 临时媒体，
+# 且 ACK/TTL 删除后不把 R2 当持久化存储。
+MAX_EVENT_BYTES = "262144000"
+MAX_AUDIO_BYTES = "5242880"
+MAX_PHOTO_BYTES = "786432"
+MAX_ACTIVE_SESSIONS = "20"
+MAX_SUBMISSIONS_PER_SESSION = "100"
+SESSION_TTL_SECONDS = "86400"
+# 未 ACK 投稿自 finalize 起仅保留 24 小时；cron 与 API 时限校验共同强制，不能仅依赖 R2 lifecycle。
+# 已经由用户授权启用。注册仍要求 Apple App Attest、已签名并验证的 StoreKit
+# 交易、请求签名、防重放和限速；不得替换为本机授权或匿名注册。
+HOST_REGISTRATION_ENABLED = "true"
+# App Store Connect 已登记的生产 App 身份。它们不是密钥，仍由 Worker 对 Apple
+# 签发的 App Attest / StoreKit JWS 做完整密码学校验。
+APP_ATTEST_APP_ID = "24PHM239L9.com.eventvoicebooth.ios"
+APP_STORE_BUNDLE_ID = "com.eventvoicebooth.ios"
+APP_APPLE_ID = "6794172384"
+# IP_HASH_SALT 必须以 `wrangler secret put IP_HASH_SALT` 设置；绝不写入 vars 或仓库。
+
+[triggers]
+crons = ["*/5 * * * *"]
