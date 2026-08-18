@@ -5,82 +5,34 @@
 const api = "https://event-voice-booth-web-guest.event-voice-booth-web-guest.workers.dev";
 const slug = location.pathname.split("/").filter(Boolean).at(-1);
 const $ = (id) => document.getElementById(id);
-const state = { config: null, recorder: null, stream: null, chunks: [], audio: null, photos: [], photosPreparing: false, submissionID: null, pollTimer: null };
+const state = { config: null, recorder: null, stream: null, chunks: [], audio: null, photos: [], photoURLs: [], photosPreparing: false, isSending: false, submissionID: null, pollTimer: null };
 const status = (message) => { $("status").textContent = message; };
 const updateSendSummary = () => { $("send-summary").textContent = state.photosPreparing ? "Preparing photos securely…" : `This message will be sent with ${state.photos.length} photo${state.photos.length === 1 ? "" : "s"}.`; };
 const setPhotoControls = (disabled) => { $("take-photo").disabled = disabled; $("choose-photos").disabled = disabled; };
 const withTimeout = (promise, milliseconds, message) => Promise.race([promise, new Promise((_, reject) => window.setTimeout(() => reject(new Error(message)), milliseconds))]);
+const clearPhotoURLs = () => { state.photoURLs.forEach((url) => URL.revokeObjectURL(url)); state.photoURLs = []; };
 
-// Face Landmarker 和 WASM 都以静态文件随 Pages 一起发布；不从 CDN 加载，也不向
-// 第三方发送照片、视频帧或 landmarks。仅在用户选择非 Natural 效果并拍照后惰性加载。
-let faceLandmarkerPromise;
-async function faceLandmarker() {
-  if (!faceLandmarkerPromise) {
-    faceLandmarkerPromise = (async () => {
-      const { FaceLandmarker, FilesetResolver } = await import("/vendor/mediapipe/vision_bundle.mjs");
-      const vision = await FilesetResolver.forVisionTasks("/vendor/mediapipe");
-      return FaceLandmarker.createFromOptions(vision, {
-        baseOptions: { modelAssetPath: "/vendor/mediapipe/face_landmarker.task" },
-        runningMode: "IMAGE",
-        numFaces: 1
-      });
-    })();
-  }
-  return faceLandmarkerPromise;
+/**
+ * 上传期间以不可关闭的模态提示占据视觉焦点，避免顶部状态文字被忽略。
+ * 上传结束后可切换为带确认按钮的结果提示，并把焦点安全移到按钮。
+ */
+function showMessageDialog({ title, detail, busy, actionLabel = "Continue" }) {
+  $("message-dialog-title").textContent = title;
+  $("message-dialog-detail").textContent = detail;
+  $("message-dialog-progress").hidden = !busy;
+  const action = $("message-dialog-action");
+  action.hidden = busy;
+  action.textContent = actionLabel;
+  $("message-dialog").hidden = false;
+  if (!busy) action.focus({ preventScroll: true });
 }
 
-function point(landmarks, index, width, height) { const value = landmarks[index]; return value && { x: value.x * width, y: value.y * height }; }
-function distance(a, b) { return Math.hypot(a.x - b.x, a.y - b.y); }
-function drawEllipse(context, center, width, height, rotation, fill, stroke) { context.save(); context.translate(center.x, center.y); context.rotate(rotation); context.beginPath(); context.ellipse(0, 0, width / 2, height / 2, 0, 0, Math.PI * 2); context.fillStyle = fill; context.fill(); if (stroke) { context.strokeStyle = stroke; context.lineWidth = Math.max(2, width * .07); context.stroke(); } context.restore(); }
-
-/** 仅对已拍摄 Canvas 做一次本地 landmark 渲染；失败时保留原自拍，不阻塞留言。 */
-async function applySelfieEffect(canvas) {
-  const effect = $("selfie-effect").value;
-  if (effect === "natural") return;
-  const landmarker = await faceLandmarker();
-  const result = landmarker.detect(canvas);
-  const landmarks = result.faceLandmarks?.[0];
-  if (!landmarks) return;
-  const context = canvas.getContext("2d");
-  if (!context) return;
-  const leftEye = point(landmarks, 33, canvas.width, canvas.height);
-  const rightEye = point(landmarks, 263, canvas.width, canvas.height);
-  const nose = point(landmarks, 1, canvas.width, canvas.height);
-  const mouth = point(landmarks, 13, canvas.width, canvas.height);
-  const forehead = point(landmarks, 10, canvas.width, canvas.height);
-  const chin = point(landmarks, 152, canvas.width, canvas.height);
-  if (!leftEye || !rightEye || !nose || !mouth || !forehead || !chin) return;
-  const eyeDistance = distance(leftEye, rightEye); const angle = Math.atan2(rightEye.y - leftEye.y, rightEye.x - leftEye.x);
-  const center = { x: (leftEye.x + rightEye.x) / 2, y: (leftEye.y + rightEye.y) / 2 }; const faceHeight = distance(forehead, chin);
-  if (eyeDistance < 8 || faceHeight < 20) return;
-  if (effect === "bigHead" || effect === "faceWarp" || effect === "bigEyes") {
-    const scale = effect === "bigHead" ? 1.18 : effect === "faceWarp" ? .86 : 1;
-    const radius = effect === "bigEyes" ? eyeDistance * .42 : faceHeight * .56;
-    const source = document.createElement("canvas"); source.width = canvas.width; source.height = canvas.height;
-    source.getContext("2d").drawImage(canvas, 0, 0);
-    context.save(); context.beginPath(); context.arc(center.x, center.y, radius, 0, Math.PI * 2); context.clip();
-    context.translate(center.x, center.y); context.scale(scale, scale); context.translate(-center.x, -center.y); context.drawImage(source, 0, 0); context.restore();
-    if (effect === "bigEyes") { drawEllipse(context, leftEye, eyeDistance * .7, eyeDistance * .52, angle, "rgba(255,255,255,.24)"); drawEllipse(context, rightEye, eyeDistance * .7, eyeDistance * .52, angle, "rgba(255,255,255,.24)"); }
-    return;
-  }
-  context.save(); context.translate(center.x, center.y); context.rotate(angle);
-  if (effect === "bunnyEars") {
-    context.fillStyle = "#f7a6c4"; context.strokeStyle = "#3e1c32"; context.lineWidth = Math.max(3, eyeDistance * .08);
-    for (const offset of [-eyeDistance * .44, eyeDistance * .44]) { context.beginPath(); context.ellipse(offset, -faceHeight * .58, eyeDistance * .22, faceHeight * .42, 0, 0, Math.PI * 2); context.fill(); context.stroke(); }
-  } else if (effect === "partyWig") {
-    context.fillStyle = "#bb4dea"; for (let index = -3; index <= 3; index += 1) { context.beginPath(); context.arc(index * eyeDistance * .24, -faceHeight * .42, eyeDistance * .27, Math.PI, 0); context.fill(); }
-  } else if (effect === "goofyGlasses" || effect === "sunglasses") {
-    const dark = effect === "sunglasses" ? "rgba(16,20,27,.9)" : "rgba(103,225,255,.84)";
-    drawEllipse(context, { x: -eyeDistance / 2, y: 0 }, eyeDistance * .95, eyeDistance * .72, 0, dark, "#fff"); drawEllipse(context, { x: eyeDistance / 2, y: 0 }, eyeDistance * .95, eyeDistance * .72, 0, dark, "#fff"); context.strokeStyle = "#fff"; context.lineWidth = Math.max(2, eyeDistance * .08); context.beginPath(); context.moveTo(-eyeDistance * .1, 0); context.lineTo(eyeDistance * .1, 0); context.stroke();
-  } else if (effect === "alienEyes") {
-    drawEllipse(context, { x: -eyeDistance / 2, y: 0 }, eyeDistance * .9, eyeDistance * .72, 0, "#a5ff70", "#fff"); drawEllipse(context, { x: eyeDistance / 2, y: 0 }, eyeDistance * .9, eyeDistance * .72, 0, "#a5ff70", "#fff");
-  } else if (effect === "fakeMustache") {
-    context.fillStyle = "#3a221b"; for (const offset of [-eyeDistance * .22, eyeDistance * .22]) { context.beginPath(); context.ellipse(offset, eyeDistance * .45, eyeDistance * .32, eyeDistance * .16, offset < 0 ? -.45 : .45, 0, Math.PI * 2); context.fill(); }
-  } else if (effect === "paperBag") {
-    context.fillStyle = "rgba(179,132,73,.9)"; context.fillRect(-eyeDistance * 1.25, -faceHeight * .58, eyeDistance * 2.5, faceHeight * 1.35); context.globalCompositeOperation = "destination-out"; drawEllipse(context, { x: -eyeDistance / 2, y: 0 }, eyeDistance * .52, eyeDistance * .34, 0, "#000"); drawEllipse(context, { x: eyeDistance / 2, y: 0 }, eyeDistance * .52, eyeDistance * .34, 0, "#000");
-  }
-  context.restore();
+function hideMessageDialog() {
+  $("message-dialog").hidden = true;
+  if (!$("send").disabled && !$("composer").hidden) $("send").focus({ preventScroll: true });
 }
+
+$("message-dialog-action").addEventListener("click", hideMessageDialog);
 
 function errorMessage(error) {
   if (error?.name === "NotAllowedError") return "Microphone access was not allowed. You can enable it in your browser settings and try again.";
@@ -151,7 +103,8 @@ function finishRecording() {
   status("Listen to your recording, optionally add photos, then send it to the host.");
 }
 
-async function compressPhoto(file, applyEffect) {
+/** 将自拍或相册照片仅在浏览器内压缩为不含 EXIF 的最终 JPEG。 */
+async function compressPhoto(file) {
   const maxBytes = state.config.maxPhotoBytes;
   // iOS Safari 对 createImageBitmap 的支持不完整（尤其是相册 HEIC），这里使用
   // 浏览器通用的 Image 解码后再转 JPEG。对象 URL 会立即释放，不保留 Guest 原图。
@@ -169,14 +122,6 @@ async function compressPhoto(file, applyEffect) {
     if (!context) throw new Error("This browser cannot prepare the selected photo.");
     // 不读取 EXIF 或把原图写入存储；Canvas 重绘只保留最终 JPEG 像素。
     context.fillStyle = "#fff"; context.fillRect(0, 0, canvas.width, canvas.height); context.drawImage(image, 0, 0, canvas.width, canvas.height);
-    if (applyEffect && $("selfie-effect").value !== "natural") {
-      try {
-        await withTimeout(applySelfieEffect(canvas), 12_000, "This selfie effect took too long. Your original selfie will be used instead.");
-      } catch (error) {
-        // 人脸未识别、WASM 不可用或超时都不可阻断宾客提交；保留已经重绘的原自拍。
-        console.warn("selfie_effect_fallback", { name: error?.name || "unknown" });
-      }
-    }
     for (let quality = 0.88; quality >= 0.4; quality -= 0.08) {
       const blob = await withTimeout(new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", quality)), 15_000, "This photo took too long to prepare. Choose a smaller JPEG or PNG photo and try again.");
       if (blob && blob.size <= maxBytes) return blob;
@@ -191,15 +136,22 @@ async function prepareSelectedPhotos(event) {
   // 异步处理期间 Event.currentTarget 在 Safari 中可能变为 null；必须在同步阶段
   // 固定 input 引用，确保 finally 无论成功、失败或超时都能恢复交互。
   const input = event.currentTarget;
-  const isSelfie = input.id === "camera-photos";
   const files = [...input.files].slice(0, 6);
   if (!files.length) return;
   state.photosPreparing = true; $("send").disabled = true; setPhotoControls(true); updateSendSummary();
   try {
-    state.photos = await Promise.all(files.map((file) => compressPhoto(file, isSelfie)));
-    $("photo-list").replaceChildren(...state.photos.map((photo, index) => { const item = document.createElement("li"); item.textContent = `Photo ${index + 1}: ${Math.ceil(photo.size / 1024)} KB`; return item; }));
+    const prepared = await Promise.all(files.map(compressPhoto));
+    clearPhotoURLs();
+    state.photos = prepared;
+    state.photoURLs = state.photos.map((photo) => URL.createObjectURL(photo));
+    $("photo-list").replaceChildren(...prepared.map((photo, index) => {
+      const item = document.createElement("li");
+      const preview = document.createElement("img"); preview.src = state.photoURLs[index]; preview.alt = `Prepared photo ${index + 1}`;
+      const detail = document.createElement("span"); detail.textContent = `${Math.ceil(photo.size / 1024)} KB`;
+      item.append(preview, detail); return item;
+    }));
     if (input.files.length > 6) status("Only the first 6 photos were selected.");
-  } catch (error) { state.photos = []; $("photo-list").replaceChildren(); status(errorMessage(error)); }
+  } catch (error) { clearPhotoURLs(); state.photos = []; $("photo-list").replaceChildren(); status(errorMessage(error)); }
   finally { input.value = ""; state.photosPreparing = false; setPhotoControls(false); $("send").disabled = !state.audio; updateSendSummary(); }
 }
 $("take-photo").addEventListener("click", () => $("camera-photos").click());
@@ -220,8 +172,14 @@ async function upload(kind, blob) {
 $("send").addEventListener("click", async () => {
   if (!state.audio || state.photosPreparing) return;
   try {
+    state.isSending = true;
     $("send").disabled = true; $("discard").disabled = true; setPhotoControls(true);
     status("Uploading your message securely… Keep this page open.");
+    showMessageDialog({
+      title: "Sending your message",
+      detail: "Keep this browser open. Do not close this page until you see that your message was sent.",
+      busy: true,
+    });
     const audio = await upload("audio", state.audio);
     const photos = [];
     for (const photo of state.photos) photos.push(await upload("photo", photo));
@@ -230,8 +188,20 @@ $("send").addEventListener("click", async () => {
     state.receipt = final.receipt;
     $("composer").hidden = true; $("saved-panel").hidden = false;
     status("Your message is waiting for the host to save it.");
+    showMessageDialog({
+      title: "Message sent securely",
+      detail: "Your upload is complete. You may now leave this page, or keep it open to see when the host saves your message.",
+      busy: false,
+    });
     pollHostAcknowledgement();
-  } catch (error) { $("send").disabled = false; $("discard").disabled = false; setPhotoControls(false); status(errorMessage(error)); }
+  } catch (error) {
+    $("send").disabled = false; $("discard").disabled = false; setPhotoControls(false);
+    const message = errorMessage(error);
+    status(message);
+    showMessageDialog({ title: "Upload not finished", detail: `${message} Your recording is still on this page. Close this message and tap Send to host to try again.`, busy: false, actionLabel: "Close" });
+  } finally {
+    state.isSending = false;
+  }
 });
 
 async function pollHostAcknowledgement() {
@@ -244,5 +214,12 @@ async function pollHostAcknowledgement() {
   state.pollTimer = window.setTimeout(pollHostAcknowledgement, 5000);
 }
 
-window.addEventListener("pagehide", () => { state.stream?.getTracks().forEach((track) => track.stop()); if (state.pollTimer) clearTimeout(state.pollTimer); });
+// 支持 beforeunload 的浏览器会在上传未完成时给出系统级离页确认；浏览器出于
+// 安全原因会忽略自定义文案，因此页面内模态弹窗仍是主要提醒方式。
+window.addEventListener("beforeunload", (event) => {
+  if (!state.isSending) return;
+  event.preventDefault();
+  event.returnValue = "";
+});
+window.addEventListener("pagehide", () => { state.stream?.getTracks().forEach((track) => track.stop()); clearPhotoURLs(); if (state.pollTimer) clearTimeout(state.pollTimer); });
 boot().catch((error) => { status(errorMessage(error)); });

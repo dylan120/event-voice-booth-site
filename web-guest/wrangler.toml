@@ -34,8 +34,12 @@ HOST_REGISTRATION_ENABLED = "true"
 # App Store Connect 已登记的生产 App 身份。它们不是密钥，仍由 Worker 对 Apple
 # 签发的 App Attest / StoreKit JWS 做完整密码学校验。
 APP_ATTEST_APP_ID = "24PHM239L9.com.eventvoicebooth.ios"
+APP_ATTEST_DEVELOPMENT = "false"
 APP_STORE_BUNDLE_ID = "com.eventvoicebooth.ios"
 APP_APPLE_ID = "6794172384"
+# Apple 登录主认证已具备服务端单次 nonce、JWT claim/JWKS 验证、StoreKit JWS
+# 绑定、refresh rotation/replay 失效和旧 P-256 迁移后降权。Guest 仍完全匿名。
+APPLE_HOST_AUTH_ENABLED = "true"
 # IP_HASH_SALT 必须以 `wrangler secret put IP_HASH_SALT` 设置；绝不写入 vars 或仓库。
 
 [triggers]
