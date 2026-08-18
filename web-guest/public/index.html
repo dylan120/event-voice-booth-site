@@ -29,7 +29,7 @@
           <button id="discard" type="button" class="secondary" disabled>Record again</button>
         </div>
         <audio id="preview" controls hidden></audio>
-        <div class="photos"><strong>Optional selfies</strong><span>Take up to 6 front-camera selfies. Your selected effect runs only in this browser before the final JPEG is compressed and securely uploaded.</span><label class="effect-picker" for="selfie-effect">Selfie effect<select id="selfie-effect"><option value="natural">Natural</option><option value="bigHead">Big Head</option><option value="partyWig">Party Wig</option><option value="bunnyEars">Bunny Ears</option><option value="goofyGlasses">Goofy Glasses</option><option value="alienEyes">Alien Eyes</option><option value="paperBag">Paper Bag</option><option value="faceWarp">Face Warp</option><option value="bigEyes">Big Eyes</option><option value="fakeMustache">Fake Mustache</option><option value="sunglasses">Sunglasses</option></select></label><div class="photo-actions"><button id="take-photo" type="button" class="secondary" disabled>Take a selfie</button><button id="choose-photos" type="button" class="secondary" disabled>Choose photos</button></div><input id="camera-photos" type="file" accept="image/jpeg,image/png" capture="user" hidden><input id="library-photos" type="file" accept="image/jpeg,image/png" multiple hidden></div>
+        <div class="photos"><strong>Optional selfies</strong><span>Take up to 6 front-camera selfies or choose photos. They are compressed to JPEG in this browser before secure upload.</span><div class="photo-actions"><button id="take-photo" type="button" class="secondary" disabled>Take a selfie</button><button id="choose-photos" type="button" class="secondary" disabled>Choose photos</button></div><input id="camera-photos" type="file" accept="image/jpeg,image/png" capture="user" hidden><input id="library-photos" type="file" accept="image/jpeg,image/png" multiple hidden></div>
         <ul id="photo-list" class="photo-list" aria-live="polite"></ul>
         <p id="send-summary" class="hint" aria-live="polite"></p>
         <button id="send" type="button" disabled>Send to host</button>
@@ -39,6 +39,15 @@
         <h2 id="saved-title">Sent securely</h2>
         <p id="saved-status" class="status" role="status" aria-live="polite">Waiting for the host to save your message…</p>
       </section>
+
+      <div id="message-dialog" class="modal" role="alertdialog" aria-modal="true" aria-labelledby="message-dialog-title" aria-describedby="message-dialog-detail" hidden>
+        <div class="modal-card">
+          <div id="message-dialog-progress" class="modal-progress" aria-hidden="true"></div>
+          <h2 id="message-dialog-title">Sending your message</h2>
+          <p id="message-dialog-detail">Keep this browser open until the upload is complete.</p>
+          <button id="message-dialog-action" type="button" hidden>Continue</button>
+        </div>
+      </div>
       <noscript>This private guest page needs JavaScript to record a message.</noscript>
     </main>
     <script type="module" src="/join.js"></script>

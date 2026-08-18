@@ -3,3 +3,4 @@ web-guest/node_modules/
 web-guest/.wrangler/
 web-guest/worker-startup.cpuprofile
 web-guest/src/worker-configuration.d.ts
+.wrangler/

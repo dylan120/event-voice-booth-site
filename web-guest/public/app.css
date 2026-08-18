@@ -18,9 +18,17 @@ button:disabled { cursor: not-allowed; opacity: .55; }
 .hint, .status, .photos span { color: #f4d5df; }
 .photos { display: grid; gap: .35rem; margin-block: 1rem; font-weight: 700; }
 .photos span { font-size: .85rem; font-weight: 400; }
-.effect-picker { display: grid; gap: .35rem; margin-top: .4rem; font-size: .9rem; }
-.effect-picker select { min-height: 44px; border: 1px solid #ffffff45; border-radius: .65rem; padding: .5rem .7rem; color: #fffdfc; background: #ffffff20; font: inherit; }
 .photo-actions { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; margin-top: .4rem; }
 audio { width: 100%; max-width: 100%; margin-bottom: .75rem; }
-.photo-list { padding-left: 1.2rem; line-height: 1.5; }
+.photo-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr)); gap: .75rem; padding: 0; list-style: none; }
+.photo-list li { display: grid; gap: .4rem; min-width: 0; color: #f4d5df; font-size: .8rem; }
+.photo-list img { display: block; width: 100%; aspect-ratio: 3 / 4; object-fit: cover; border: 1px solid #ffffff45; border-radius: .65rem; background: #1f111b; }
+.modal { position: fixed; z-index: 10; inset: 0; display: grid; place-items: center; padding: max(1rem, env(safe-area-inset-top)) max(1rem, env(safe-area-inset-right)) max(1rem, env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left)); background: #160c14d9; backdrop-filter: blur(8px); }
+.modal[hidden] { display: none; }
+.modal-card { width: min(100%, 24rem); padding: 1.5rem; border: 1px solid #ffffff45; border-radius: 1rem; background: #2b1825; box-shadow: 0 1.5rem 4rem #0008; text-align: center; }
+.modal-card h2 { margin-block: 1rem .5rem; }
+.modal-card p { margin-block: 0 1.25rem; color: #f4d5df; }
+.modal-progress { width: 2.5rem; aspect-ratio: 1; margin-inline: auto; border: .25rem solid #ffffff35; border-top-color: #ffe083; border-radius: 50%; animation: modal-spin .8s linear infinite; }
+@keyframes modal-spin { to { transform: rotate(1turn); } }
+@media (prefers-reduced-motion: reduce) { .modal-progress { animation: none; border-color: #ffe083; } }
 @media (max-width: 520px) { body { place-items: start center; } h1 { font-size: clamp(2rem, 11vw, 3rem); } section { padding: 1rem; border-radius: .9rem; } .actions, .photo-actions { grid-template-columns: 1fr; } .actions #record { grid-column: auto; } }

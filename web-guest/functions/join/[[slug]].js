@@ -5,7 +5,12 @@
 const api = "https://event-voice-booth-web-guest.event-voice-booth-web-guest.workers.dev";
 
 export async function onRequestGet(context) {
-  const slug = context.params.slug;
+  // Pages 的 `[[slug]]` 是 catch-all 参数，生产运行时会以数组返回 path segments。
+  // 只接受恰好一个 segment，避免额外路径被折叠成同一个 capability。
+  const rawSlug = context.params.slug;
+  const slug = Array.isArray(rawSlug)
+    ? (rawSlug.length === 1 ? rawSlug[0] : null)
+    : rawSlug;
   if (typeof slug !== "string" || !/^[A-Za-z0-9_-]{32,}$/.test(slug)) {
     return new Response("This guest link is no longer available.", { status: 410, headers: { "cache-control": "no-store" } });
   }

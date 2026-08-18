@@ -13,6 +13,8 @@ CREATE TABLE IF NOT EXISTS sessions (
   revoked_at INTEGER
 );
 CREATE INDEX IF NOT EXISTS sessions_host_state ON sessions(host_id, state);
+-- 每个 Host 同一时刻只允许一条 live Session；到期记录先转为 expired 后才可新建。
+CREATE UNIQUE INDEX IF NOT EXISTS sessions_one_live_per_host ON sessions(host_id) WHERE state = 'live';
 
 CREATE TABLE IF NOT EXISTS hosts (
   id TEXT PRIMARY KEY,
@@ -22,6 +24,11 @@ CREATE TABLE IF NOT EXISTS hosts (
   app_attest_sign_count INTEGER NOT NULL DEFAULT 0,
   transaction_id TEXT,
   original_transaction_id TEXT,
+  -- Apple Sign in 的稳定匿名 subject 是 Host 主身份；不保存姓名、邮箱或 token。
+  apple_subject TEXT UNIQUE,
+  -- logout/安全恢复时递增，使此前签发的短 access token 立即失效。
+  auth_epoch INTEGER NOT NULL DEFAULT 0,
+  deleting_at INTEGER,
   -- 新订阅按 Apple JWS 的 expiresDate 刷新；旧 Lifetime 使用远期值兼容。
   subscription_expires_at INTEGER,
   -- 仅存脱敏失败阶段，帮助排查 App Attest，不记录断言、JWS 或媒体。
@@ -32,6 +39,37 @@ CREATE TABLE IF NOT EXISTS hosts (
 );
 CREATE UNIQUE INDEX IF NOT EXISTS hosts_app_attest_key_id_unique ON hosts(app_attest_key_id) WHERE app_attest_key_id IS NOT NULL;
 CREATE UNIQUE INDEX IF NOT EXISTS hosts_transaction_id_unique ON hosts(transaction_id) WHERE transaction_id IS NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS hosts_original_transaction_id_unique ON hosts(original_transaction_id) WHERE original_transaction_id IS NOT NULL;
+
+-- 免费试用按 Apple 稳定匿名 subject 的 HMAC 摘要累计，不能由卸载、本地清除或删除
+-- Event 重置。账号删除仍会删除 Host 与媒体；这里只保留不可逆的反滥用额度摘要。
+CREATE TABLE IF NOT EXISTS demo_quotas (
+  subject_hash TEXT PRIMARY KEY,
+  message_count INTEGER NOT NULL DEFAULT 0 CHECK(message_count >= 0 AND message_count <= 3),
+  last_recording_id TEXT,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS demo_message_claims (
+  subject_hash TEXT NOT NULL,
+  recording_id TEXT NOT NULL,
+  claimed_at INTEGER NOT NULL,
+  counted_at INTEGER,
+  PRIMARY KEY(subject_hash, recording_id)
+);
+
+-- refresh token 只保存 SHA-256 摘要，单次轮换；原始 token 不持久化。
+CREATE TABLE IF NOT EXISTS host_refresh_tokens (
+  id TEXT PRIMARY KEY,
+  host_id TEXT NOT NULL,
+  token_hash TEXT NOT NULL UNIQUE,
+  auth_epoch INTEGER NOT NULL,
+  expires_at INTEGER NOT NULL,
+  created_at INTEGER NOT NULL,
+  revoked_at INTEGER,
+  replay_detected_at INTEGER
+);
+CREATE INDEX IF NOT EXISTS host_refresh_tokens_host_expiry ON host_refresh_tokens(host_id, expires_at);
 
 CREATE TABLE IF NOT EXISTS host_nonces (
   host_id TEXT NOT NULL,
